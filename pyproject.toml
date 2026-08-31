@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "io-performance-kit"
+version = "0.1.0"
+description = "Small transparent I/O performance tools"
+requires-python = ">=3.9"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[project.scripts]
+io-perf = "io_performance_kit.__main__:main"
