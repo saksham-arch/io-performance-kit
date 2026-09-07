@@ -1,9 +1,10 @@
 from dataclasses import dataclass
 from pathlib import Path
 import os
+from statistics import median
 import tempfile
 from time import perf_counter_ns
-from typing import Callable, Union
+from typing import Callable, Iterable, Union
 
 
 @dataclass(frozen=True)
@@ -29,6 +30,15 @@ class WriteObservation:
         if self.elapsed_ns <= 0:
             raise ValueError("elapsed time must be positive")
         return (self.bytes_written / (1024 * 1024)) / (self.elapsed_ns / 1_000_000_000)
+
+
+@dataclass(frozen=True)
+class ThroughputSummary:
+    pass_count: int
+    minimum_mib_per_second: float
+    median_mib_per_second: float
+    maximum_mib_per_second: float
+    relative_range: float
 
 
 def measure_sequential_reads(
@@ -92,3 +102,19 @@ def measure_sequential_writes(
             raise ValueError("clock must advance during a write")
         observations.append(WriteObservation(written, elapsed, synchronize))
     return observations
+
+
+def summarize_throughput(
+    observations: Iterable[Union[ReadObservation, WriteObservation]],
+) -> ThroughputSummary:
+    rates = sorted(item.mebibytes_per_second for item in observations)
+    if not rates:
+        raise ValueError("at least one observation is required")
+    middle = median(rates)
+    return ThroughputSummary(
+        pass_count=len(rates),
+        minimum_mib_per_second=rates[0],
+        median_mib_per_second=middle,
+        maximum_mib_per_second=rates[-1],
+        relative_range=(rates[-1] - rates[0]) / middle,
+    )

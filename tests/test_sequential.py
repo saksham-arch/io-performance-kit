@@ -6,6 +6,7 @@ from io_performance_kit import (
     ReadObservation,
     measure_sequential_reads,
     measure_sequential_writes,
+    summarize_throughput,
 )
 
 
@@ -55,6 +56,21 @@ class SequentialReadTests(unittest.TestCase):
     def test_validates_write_configuration(self) -> None:
         with self.assertRaises(ValueError):
             measure_sequential_writes("missing", total_bytes=1)
+
+    def test_summarizes_variation_across_passes(self) -> None:
+        observations = [
+            ReadObservation(1024 * 1024, 1_000_000_000),
+            ReadObservation(2 * 1024 * 1024, 1_000_000_000),
+            ReadObservation(3 * 1024 * 1024, 1_000_000_000),
+        ]
+        summary = summarize_throughput(observations)
+        self.assertEqual(summary.pass_count, 3)
+        self.assertEqual(summary.median_mib_per_second, 2.0)
+        self.assertEqual(summary.relative_range, 1.0)
+
+    def test_rejects_empty_throughput_summary(self) -> None:
+        with self.assertRaises(ValueError):
+            summarize_throughput([])
 
 
 if __name__ == "__main__":
