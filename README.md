@@ -20,7 +20,10 @@ Write measurements use temporary files that are removed after every pass. Add
 results may primarily reflect operating-system buffering.
 
 Summary mode preserves every raw observation and adds minimum, median, maximum,
-and relative range across passes. A wide relative range is a prompt to inspect
-the environment, not a benchmark result to hide.
+relative range, total bytes, total elapsed time, and aggregate throughput across
+passes. Aggregate throughput is computed from the combined bytes and duration,
+so long passes carry their actual weight; it may differ from the median of the
+individual pass rates. A wide relative range is a prompt to inspect the
+environment, not a benchmark result to hide.
 
 Run tests with `python -m unittest discover -s tests`.

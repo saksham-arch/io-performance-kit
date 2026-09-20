@@ -65,8 +65,22 @@ class SequentialReadTests(unittest.TestCase):
         ]
         summary = summarize_throughput(observations)
         self.assertEqual(summary.pass_count, 3)
+        self.assertEqual(summary.total_bytes, 6 * 1024 * 1024)
+        self.assertEqual(summary.total_elapsed_ns, 3_000_000_000)
+        self.assertEqual(summary.aggregate_mib_per_second, 2.0)
         self.assertEqual(summary.median_mib_per_second, 2.0)
         self.assertEqual(summary.relative_range, 1.0)
+
+    def test_aggregate_rate_weights_passes_by_elapsed_time(self) -> None:
+        observations = [
+            ReadObservation(1024 * 1024, 1_000_000_000),
+            ReadObservation(1024 * 1024, 3_000_000_000),
+        ]
+        summary = summarize_throughput(observations)
+        self.assertEqual(summary.total_bytes, 2 * 1024 * 1024)
+        self.assertEqual(summary.total_elapsed_ns, 4_000_000_000)
+        self.assertEqual(summary.aggregate_mib_per_second, 0.5)
+        self.assertAlmostEqual(summary.median_mib_per_second, 2 / 3)
 
     def test_rejects_empty_throughput_summary(self) -> None:
         with self.assertRaises(ValueError):

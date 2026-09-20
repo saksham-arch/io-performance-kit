@@ -13,6 +13,10 @@ class ReadObservation:
     elapsed_ns: int
 
     @property
+    def bytes_transferred(self) -> int:
+        return self.bytes_read
+
+    @property
     def mebibytes_per_second(self) -> float:
         if self.elapsed_ns <= 0:
             raise ValueError("elapsed time must be positive")
@@ -26,6 +30,10 @@ class WriteObservation:
     synchronized: bool
 
     @property
+    def bytes_transferred(self) -> int:
+        return self.bytes_written
+
+    @property
     def mebibytes_per_second(self) -> float:
         if self.elapsed_ns <= 0:
             raise ValueError("elapsed time must be positive")
@@ -35,6 +43,9 @@ class WriteObservation:
 @dataclass(frozen=True)
 class ThroughputSummary:
     pass_count: int
+    total_bytes: int
+    total_elapsed_ns: int
+    aggregate_mib_per_second: float
     minimum_mib_per_second: float
     median_mib_per_second: float
     maximum_mib_per_second: float
@@ -107,12 +118,19 @@ def measure_sequential_writes(
 def summarize_throughput(
     observations: Iterable[Union[ReadObservation, WriteObservation]],
 ) -> ThroughputSummary:
-    rates = sorted(item.mebibytes_per_second for item in observations)
-    if not rates:
+    items = list(observations)
+    if not items:
         raise ValueError("at least one observation is required")
+    rates = sorted(item.mebibytes_per_second for item in items)
+    total_bytes = sum(item.bytes_transferred for item in items)
+    total_elapsed_ns = sum(item.elapsed_ns for item in items)
     middle = median(rates)
     return ThroughputSummary(
         pass_count=len(rates),
+        total_bytes=total_bytes,
+        total_elapsed_ns=total_elapsed_ns,
+        aggregate_mib_per_second=(total_bytes / (1024 * 1024))
+        / (total_elapsed_ns / 1_000_000_000),
         minimum_mib_per_second=rates[0],
         median_mib_per_second=middle,
         maximum_mib_per_second=rates[-1],
