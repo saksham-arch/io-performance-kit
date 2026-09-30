@@ -16,19 +16,24 @@ def main() -> None:
     read.add_argument("path")
     read.add_argument("--chunk-size", type=int, default=1024 * 1024)
     read.add_argument("--passes", type=int, default=1)
+    read.add_argument("--warmup-passes", type=int, default=0)
     read.add_argument("--summary", action="store_true")
     write = subparsers.add_parser("write")
     write.add_argument("directory")
     write.add_argument("--total-bytes", type=int, required=True)
     write.add_argument("--chunk-size", type=int, default=1024 * 1024)
     write.add_argument("--passes", type=int, default=1)
+    write.add_argument("--warmup-passes", type=int, default=0)
     write.add_argument("--synchronize", action="store_true")
     write.add_argument("--summary", action="store_true")
     args = parser.parse_args()
 
     if args.command == "read":
         results = measure_sequential_reads(
-            args.path, chunk_size=args.chunk_size, passes=args.passes
+            args.path,
+            chunk_size=args.chunk_size,
+            passes=args.passes,
+            warmup_passes=args.warmup_passes,
         )
     else:
         results = measure_sequential_writes(
@@ -36,6 +41,7 @@ def main() -> None:
             total_bytes=args.total_bytes,
             chunk_size=args.chunk_size,
             passes=args.passes,
+            warmup_passes=args.warmup_passes,
             synchronize=args.synchronize,
         )
     observations = [
@@ -43,7 +49,11 @@ def main() -> None:
         for result in results
     ]
     payload = (
-        {"observations": observations, "summary": asdict(summarize_throughput(results))}
+        {
+            "warmup_passes": args.warmup_passes,
+            "observations": observations,
+            "summary": asdict(summarize_throughput(results)),
+        }
         if args.summary
         else observations
     )

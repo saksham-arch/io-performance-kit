@@ -57,16 +57,19 @@ def measure_sequential_reads(
     *,
     chunk_size: int = 1024 * 1024,
     passes: int = 1,
+    warmup_passes: int = 0,
     clock: Callable[[], int] = perf_counter_ns,
 ) -> list[ReadObservation]:
     if chunk_size < 1:
         raise ValueError("chunk_size must be positive")
     if passes < 1:
         raise ValueError("passes must be positive")
+    if warmup_passes < 0:
+        raise ValueError("warmup_passes must be non-negative")
 
     target = Path(path)
     observations: list[ReadObservation] = []
-    for _ in range(passes):
+    for pass_index in range(warmup_passes + passes):
         total = 0
         started = clock()
         with target.open("rb", buffering=0) as source:
@@ -75,7 +78,8 @@ def measure_sequential_reads(
         elapsed = clock() - started
         if elapsed <= 0:
             raise ValueError("clock must advance during a read")
-        observations.append(ReadObservation(total, elapsed))
+        if pass_index >= warmup_passes:
+            observations.append(ReadObservation(total, elapsed))
     return observations
 
 
@@ -85,6 +89,7 @@ def measure_sequential_writes(
     total_bytes: int,
     chunk_size: int = 1024 * 1024,
     passes: int = 1,
+    warmup_passes: int = 0,
     synchronize: bool = False,
     clock: Callable[[], int] = perf_counter_ns,
 ) -> list[WriteObservation]:
@@ -92,13 +97,15 @@ def measure_sequential_writes(
         raise ValueError("total_bytes and chunk_size must be positive")
     if passes < 1:
         raise ValueError("passes must be positive")
+    if warmup_passes < 0:
+        raise ValueError("warmup_passes must be non-negative")
     target = Path(directory)
     if not target.is_dir():
         raise ValueError("directory must exist")
 
     chunk = bytes(min(chunk_size, total_bytes))
     observations: list[WriteObservation] = []
-    for _ in range(passes):
+    for pass_index in range(warmup_passes + passes):
         with tempfile.NamedTemporaryFile(dir=target, prefix=".io-perf-", buffering=0) as output:
             written = 0
             started = clock()
@@ -111,7 +118,8 @@ def measure_sequential_writes(
             elapsed = clock() - started
         if elapsed <= 0:
             raise ValueError("clock must advance during a write")
-        observations.append(WriteObservation(written, elapsed, synchronize))
+        if pass_index >= warmup_passes:
+            observations.append(WriteObservation(written, elapsed, synchronize))
     return observations
 
 

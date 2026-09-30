@@ -36,9 +36,24 @@ class SequentialReadTests(unittest.TestCase):
         result = ReadObservation(1024 * 1024, 1_000_000_000)
         self.assertEqual(result.mebibytes_per_second, 1.0)
 
+    def test_discards_read_warmup_observations(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "sample.bin"
+            path.write_bytes(b"abcdefghij")
+            results = measure_sequential_reads(
+                path,
+                passes=1,
+                warmup_passes=1,
+                clock=FakeClock([0, 10, 20, 50]),
+            )
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].elapsed_ns, 30)
+
     def test_validates_configuration(self) -> None:
         with self.assertRaises(ValueError):
             measure_sequential_reads("missing", chunk_size=0)
+        with self.assertRaises(ValueError):
+            measure_sequential_reads("missing", warmup_passes=-1)
 
     def test_writes_exact_bytes_and_removes_temporary_file(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -56,6 +71,21 @@ class SequentialReadTests(unittest.TestCase):
     def test_validates_write_configuration(self) -> None:
         with self.assertRaises(ValueError):
             measure_sequential_writes("missing", total_bytes=1)
+        with self.assertRaises(ValueError):
+            measure_sequential_writes("missing", total_bytes=1, warmup_passes=-1)
+
+    def test_discards_write_warmup_and_removes_both_files(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            results = measure_sequential_writes(
+                directory,
+                total_bytes=10,
+                passes=1,
+                warmup_passes=1,
+                clock=FakeClock([0, 10, 20, 50]),
+            )
+            self.assertEqual(list(Path(directory).iterdir()), [])
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].elapsed_ns, 30)
 
     def test_summarizes_variation_across_passes(self) -> None:
         observations = [
