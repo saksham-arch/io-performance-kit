@@ -48,6 +48,8 @@ class ThroughputSummary:
     aggregate_mib_per_second: float
     minimum_mib_per_second: float
     median_mib_per_second: float
+    median_absolute_deviation_mib_per_second: float
+    relative_median_absolute_deviation: float
     maximum_mib_per_second: float
     relative_range: float
 
@@ -133,6 +135,7 @@ def summarize_throughput(
     total_bytes = sum(item.bytes_transferred for item in items)
     total_elapsed_ns = sum(item.elapsed_ns for item in items)
     middle = median(rates)
+    median_absolute_deviation = median(abs(rate - middle) for rate in rates)
     return ThroughputSummary(
         pass_count=len(rates),
         total_bytes=total_bytes,
@@ -141,6 +144,8 @@ def summarize_throughput(
         / (total_elapsed_ns / 1_000_000_000),
         minimum_mib_per_second=rates[0],
         median_mib_per_second=middle,
+        median_absolute_deviation_mib_per_second=median_absolute_deviation,
+        relative_median_absolute_deviation=median_absolute_deviation / middle,
         maximum_mib_per_second=rates[-1],
         relative_range=(rates[-1] - rates[0]) / middle,
     )

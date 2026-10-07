@@ -99,7 +99,27 @@ class SequentialReadTests(unittest.TestCase):
         self.assertEqual(summary.total_elapsed_ns, 3_000_000_000)
         self.assertEqual(summary.aggregate_mib_per_second, 2.0)
         self.assertEqual(summary.median_mib_per_second, 2.0)
+        self.assertEqual(
+            summary.median_absolute_deviation_mib_per_second,
+            1.0,
+        )
+        self.assertEqual(summary.relative_median_absolute_deviation, 0.5)
         self.assertEqual(summary.relative_range, 1.0)
+
+    def test_median_dispersion_resists_one_slow_pass(self) -> None:
+        observations = [
+            ReadObservation(1024 * 1024, 1_000_000_000),
+            ReadObservation(1024 * 1024, 1_000_000_000),
+            ReadObservation(1024 * 1024, 10_000_000_000),
+        ]
+        summary = summarize_throughput(observations)
+        self.assertEqual(summary.median_mib_per_second, 1.0)
+        self.assertEqual(
+            summary.median_absolute_deviation_mib_per_second,
+            0.0,
+        )
+        self.assertEqual(summary.relative_median_absolute_deviation, 0.0)
+        self.assertEqual(summary.relative_range, 0.9)
 
     def test_aggregate_rate_weights_passes_by_elapsed_time(self) -> None:
         observations = [

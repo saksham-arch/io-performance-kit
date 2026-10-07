@@ -28,9 +28,14 @@ Write measurements use temporary files that are removed after every pass. Add
 results may primarily reflect operating-system buffering.
 
 Summary mode preserves every raw observation and adds minimum, median, maximum,
-relative range, total bytes, total elapsed time, and aggregate throughput across
-passes. Aggregate throughput is computed from the combined bytes and duration,
-so long passes carry their actual weight; it may differ from the median of the
+median absolute deviation (MAD), relative MAD, relative range, total bytes,
+total elapsed time, and aggregate throughput across passes. Relative MAD scales
+MAD by the median pass rate so variability can be compared across throughput
+levels. It is robust to an isolated extreme pass, so inspect the raw samples and
+range as well rather than treating a low MAD as proof of stability.
+
+Aggregate throughput is computed from the combined bytes and duration, so long
+passes carry their actual weight; it may differ from the median of the
 individual pass rates. A wide relative range is a prompt to inspect the
 environment, not a benchmark result to hide.
 
