@@ -136,6 +136,19 @@ class SequentialReadTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             summarize_throughput([])
 
+    def test_zero_throughput_has_undefined_relative_variation(self) -> None:
+        summary = summarize_throughput(
+            [
+                ReadObservation(0, 1_000_000_000),
+                ReadObservation(0, 2_000_000_000),
+            ]
+        )
+
+        self.assertEqual(summary.aggregate_mib_per_second, 0)
+        self.assertEqual(summary.median_mib_per_second, 0)
+        self.assertIsNone(summary.relative_median_absolute_deviation)
+        self.assertIsNone(summary.relative_range)
+
 
 if __name__ == "__main__":
     unittest.main()

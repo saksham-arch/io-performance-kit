@@ -33,6 +33,9 @@ total elapsed time, and aggregate throughput across passes. Relative MAD scales
 MAD by the median pass rate so variability can be compared across throughput
 levels. It is robust to an isolated extreme pass, so inspect the raw samples and
 range as well rather than treating a low MAD as proof of stability.
+Relative MAD and relative range are `null` when median throughput is zero,
+because their denominator is undefined. This can occur for empty-file reads;
+the absolute rates and byte counts remain available.
 
 Aggregate throughput is computed from the combined bytes and duration, so long
 passes carry their actual weight; it may differ from the median of the

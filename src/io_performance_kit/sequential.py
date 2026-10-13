@@ -4,7 +4,7 @@ import os
 from statistics import median
 import tempfile
 from time import perf_counter_ns
-from typing import Callable, Iterable, Union
+from typing import Callable, Iterable, Optional, Union
 
 
 @dataclass(frozen=True)
@@ -49,9 +49,9 @@ class ThroughputSummary:
     minimum_mib_per_second: float
     median_mib_per_second: float
     median_absolute_deviation_mib_per_second: float
-    relative_median_absolute_deviation: float
+    relative_median_absolute_deviation: Optional[float]
     maximum_mib_per_second: float
-    relative_range: float
+    relative_range: Optional[float]
 
 
 def measure_sequential_reads(
@@ -145,7 +145,9 @@ def summarize_throughput(
         minimum_mib_per_second=rates[0],
         median_mib_per_second=middle,
         median_absolute_deviation_mib_per_second=median_absolute_deviation,
-        relative_median_absolute_deviation=median_absolute_deviation / middle,
+        relative_median_absolute_deviation=(
+            median_absolute_deviation / middle if middle > 0 else None
+        ),
         maximum_mib_per_second=rates[-1],
-        relative_range=(rates[-1] - rates[0]) / middle,
+        relative_range=(rates[-1] - rates[0]) / middle if middle > 0 else None,
     )
