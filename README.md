@@ -29,10 +29,14 @@ results may primarily reflect operating-system buffering.
 
 Summary mode preserves every raw observation and adds minimum, median, maximum,
 median absolute deviation (MAD), relative MAD, relative range, total bytes,
-total elapsed time, and aggregate throughput across passes. Relative MAD scales
-MAD by the median pass rate so variability can be compared across throughput
-levels. It is robust to an isolated extreme pass, so inspect the raw samples and
-range as well rather than treating a low MAD as proof of stability.
+total elapsed time, aggregate throughput, and minimum and maximum bytes per
+pass. `consistent_transfer_size` is true only when every retained pass moved the
+same number of bytes. A false value can be intentional, but rate comparisons
+then describe different workloads and should be interpreted accordingly.
+Relative MAD scales MAD by the median pass rate so variability can be compared
+across throughput levels. It is robust to an isolated extreme pass, so inspect
+the raw samples and range as well rather than treating a low MAD as proof of
+stability.
 Relative MAD and relative range are `null` when median throughput is zero,
 because their denominator is undefined. This can occur for empty-file reads;
 the absolute rates and byte counts remain available.

@@ -96,6 +96,9 @@ class SequentialReadTests(unittest.TestCase):
         summary = summarize_throughput(observations)
         self.assertEqual(summary.pass_count, 3)
         self.assertEqual(summary.total_bytes, 6 * 1024 * 1024)
+        self.assertEqual(summary.minimum_bytes_per_pass, 1024 * 1024)
+        self.assertEqual(summary.maximum_bytes_per_pass, 3 * 1024 * 1024)
+        self.assertFalse(summary.consistent_transfer_size)
         self.assertEqual(summary.total_elapsed_ns, 3_000_000_000)
         self.assertEqual(summary.aggregate_mib_per_second, 2.0)
         self.assertEqual(summary.median_mib_per_second, 2.0)
@@ -131,6 +134,18 @@ class SequentialReadTests(unittest.TestCase):
         self.assertEqual(summary.total_elapsed_ns, 4_000_000_000)
         self.assertEqual(summary.aggregate_mib_per_second, 0.5)
         self.assertAlmostEqual(summary.median_mib_per_second, 2 / 3)
+
+    def test_reports_consistent_transfer_sizes(self) -> None:
+        summary = summarize_throughput(
+            [
+                ReadObservation(1024, 100),
+                ReadObservation(1024, 200),
+            ]
+        )
+
+        self.assertEqual(summary.minimum_bytes_per_pass, 1024)
+        self.assertEqual(summary.maximum_bytes_per_pass, 1024)
+        self.assertTrue(summary.consistent_transfer_size)
 
     def test_rejects_empty_throughput_summary(self) -> None:
         with self.assertRaises(ValueError):

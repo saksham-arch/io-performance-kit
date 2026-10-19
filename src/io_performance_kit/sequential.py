@@ -44,6 +44,9 @@ class WriteObservation:
 class ThroughputSummary:
     pass_count: int
     total_bytes: int
+    minimum_bytes_per_pass: int
+    maximum_bytes_per_pass: int
+    consistent_transfer_size: bool
     total_elapsed_ns: int
     aggregate_mib_per_second: float
     minimum_mib_per_second: float
@@ -132,6 +135,7 @@ def summarize_throughput(
     if not items:
         raise ValueError("at least one observation is required")
     rates = sorted(item.mebibytes_per_second for item in items)
+    transfer_sizes = [item.bytes_transferred for item in items]
     total_bytes = sum(item.bytes_transferred for item in items)
     total_elapsed_ns = sum(item.elapsed_ns for item in items)
     middle = median(rates)
@@ -139,6 +143,9 @@ def summarize_throughput(
     return ThroughputSummary(
         pass_count=len(rates),
         total_bytes=total_bytes,
+        minimum_bytes_per_pass=min(transfer_sizes),
+        maximum_bytes_per_pass=max(transfer_sizes),
+        consistent_transfer_size=len(set(transfer_sizes)) == 1,
         total_elapsed_ns=total_elapsed_ns,
         aggregate_mib_per_second=(total_bytes / (1024 * 1024))
         / (total_elapsed_ns / 1_000_000_000),
