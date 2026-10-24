@@ -29,10 +29,11 @@ results may primarily reflect operating-system buffering.
 
 Summary mode preserves every raw observation and adds minimum, median, maximum,
 median absolute deviation (MAD), relative MAD, relative range, total bytes,
-total elapsed time, aggregate throughput, and minimum and maximum bytes per
-pass. `consistent_transfer_size` is true only when every retained pass moved the
-same number of bytes. A false value can be intentional, but rate comparisons
-then describe different workloads and should be interpreted accordingly.
+total elapsed time, median and nearest-rank p95 pass duration, aggregate
+throughput, and minimum and maximum bytes per pass. `consistent_transfer_size`
+is true only when every retained pass moved the same number of bytes. A false
+value can be intentional, but rate and duration comparisons then describe
+different workloads and should be interpreted accordingly.
 Relative MAD scales MAD by the median pass rate so variability can be compared
 across throughput levels. It is robust to an isolated extreme pass, so inspect
 the raw samples and range as well rather than treating a low MAD as proof of
@@ -46,4 +47,9 @@ passes carry their actual weight; it may differ from the median of the
 individual pass rates. A wide relative range is a prompt to inspect the
 environment, not a benchmark result to hide.
 
-Run tests with `python -m unittest discover -s tests`.
+Pass-duration p95 exposes slower observed passes without converting them into a
+rate. It is coarse for small sample counts and includes caching, scheduling,
+filesystem, synchronization, and device effects. It is most comparable when
+transfer sizes and measurement settings are consistent across passes.
+
+Run tests with `PYTHONPATH=src python3 -m unittest discover -s tests`.

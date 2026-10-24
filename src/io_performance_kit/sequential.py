@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from math import ceil
 from pathlib import Path
 import os
 from statistics import median
@@ -48,6 +49,8 @@ class ThroughputSummary:
     maximum_bytes_per_pass: int
     consistent_transfer_size: bool
     total_elapsed_ns: int
+    median_elapsed_ns: float
+    p95_elapsed_ns: int
     aggregate_mib_per_second: float
     minimum_mib_per_second: float
     median_mib_per_second: float
@@ -138,6 +141,7 @@ def summarize_throughput(
     transfer_sizes = [item.bytes_transferred for item in items]
     total_bytes = sum(item.bytes_transferred for item in items)
     total_elapsed_ns = sum(item.elapsed_ns for item in items)
+    elapsed_samples = sorted(item.elapsed_ns for item in items)
     middle = median(rates)
     median_absolute_deviation = median(abs(rate - middle) for rate in rates)
     return ThroughputSummary(
@@ -147,6 +151,8 @@ def summarize_throughput(
         maximum_bytes_per_pass=max(transfer_sizes),
         consistent_transfer_size=len(set(transfer_sizes)) == 1,
         total_elapsed_ns=total_elapsed_ns,
+        median_elapsed_ns=median(elapsed_samples),
+        p95_elapsed_ns=elapsed_samples[ceil(0.95 * len(elapsed_samples)) - 1],
         aggregate_mib_per_second=(total_bytes / (1024 * 1024))
         / (total_elapsed_ns / 1_000_000_000),
         minimum_mib_per_second=rates[0],
